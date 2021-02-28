@@ -10,8 +10,12 @@ from sklearn import metrics
 
 np.random.seed(42)
 file = np.load("E:/project/beijing/small_domain/dataset_abs_all.npy") #(365,42)
+file[0,41] = -30 #根据平均值补全第一条记录
 dataset_all = file #(365,42)
 dataset_winter = np.concatenate((file[:60,:],file[334:,:]),axis=0) #(91,42)
+print(dataset_all.shape)
+print(dataset_winter.shape)
+
 var_dict = {'PM2.5_Bias':0, 'PM10_Bias':1, 'NO2_Bias':2, 'SO2_Bias':3, 'O3_Bias':4, 'CO_Bias':5, 'PM2.5_Obs':6, 'PM10_Obs':7, 'NO2_Obs':8, 'SO2_Obs':9, 'O3_Obs':10, 'CO_Obs':11, 'PM2.5_Sim':12, 'RH_Bias':18, 'TEM_Bias':19, 'WSPD_Bias':20, 'WDIR_Bias':21, 'PRE_Bias':22, 'RH_Obs':23, 'TEM_Obs':24, 'WSPD_Obs':25, 'WDIR_Obs':26, 'PRE_Obs':27, 'PBLH_Sim':28, 'SOLRAD_Sim':29, 'WIN_N_Obs':35, 'WIN_E_Obs':37, 'WIN_N_Bias':39, 'WIN_E_Bias':40, 'PM2.5_Bias_ystd':41}
 np.random.shuffle(dataset_all) #(365,42)
 # 数据集制作
@@ -60,7 +64,7 @@ lr_schedule = tf.keras.optimizers.schedules.InverseTimeDecay(
 
 def build_model():
     model = keras.Sequential([
-    layers.Dense(32, activation='relu', input_shape=[X_train.shape[1]]),
+    layers.Dense(16, activation='relu', input_shape=[X_train.shape[1]]),
     layers.Dense(8, activation='relu'),
     #layers.Dense(4, activation='relu'),
     #layers.Dense(3, activation='relu'),
@@ -158,6 +162,6 @@ cal_NMB(datasetX_all, dataset_all, 'all year revised')
 cal_NMB(dataset_winter, info = 'winter')
 cal_NMB(datasetX_winter, dataset_winter, 'winter revised')
 
-model.save("E:/project/beijing/DNN_abs_model.h5")
+model.save("E:/project/beijing/small_domain/DNN_model.h5")
 
 
