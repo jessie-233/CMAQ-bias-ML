@@ -47,8 +47,7 @@ def split_dataset(input_datasetx, input_datasety, ratio = 0.8):
     return X_train, y_train, X_test, y_test
 
 X_train, y_train, X_test, y_test = split_dataset(datasetX_all, datasetY_all)
-#print(X_train.shape, y_train.shape, X_test.shape, y_test.shape)
-#(292, 20) (292, 1) (73, 20) (73, 1)
+
 
 early_stopping = keras.callbacks.EarlyStopping(
     monitor='val_loss', 
