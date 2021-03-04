@@ -23,10 +23,11 @@ def get_xy_dataset(input_dataset):
     scaler2 = preprocessing.StandardScaler().fit(Y)
     Y = scaler2.transform(Y)
     return X, Y
+
 datasetX_all, datasetY_all = get_xy_dataset(dataset_all)
 print(datasetX_all.shape,datasetY_all.shape) #datasetX_all(365,21) 顺序；datasetY_all(365,1) 顺序
 
-
+#贡献度分析
 def get_contribution(datasetX, x_num, NNmodel, delta = 0.01):
     x_sample = datasetX[x_num,:].reshape((-1,datasetX.shape[1]))
     y_pred = float(NNmodel.predict(x_sample))
@@ -46,9 +47,11 @@ def get_contribution(datasetX, x_num, NNmodel, delta = 0.01):
 
 #加载训练好的model
 model = load_model("D:/project/data/beijing/small_domain/DNN_model.h5")
+
 data = np.zeros((datasetX_all.shape[0],datasetX_all.shape[1]))  
 for i in range(datasetX_all.shape[0]):
     print(i)
     data[i,:] = get_contribution(datasetX_all, i, model)
 
-np.savetxt("D:/project/data/beijing/small_domain/contribution_analysis.csv", data, delimiter=',')
+#np.savetxt("D:/project/data/beijing/small_domain/contribution_analysis.csv", data, delimiter=',')
+np.save("D:/project/data/beijing/small_domain/contribution_analysis.npy", data) #(365,21)
