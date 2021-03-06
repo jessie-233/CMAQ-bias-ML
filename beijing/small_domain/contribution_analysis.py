@@ -46,12 +46,12 @@ def get_contribution(datasetX, x_num, NNmodel, delta = 0.01):
     return result
 
 #加载训练好的model
-model = load_model("D:/project/data/beijing/small_domain/DNN_model.h5")
+DNN_model = load_model("D:/project/data/beijing/small_domain/DNN_model.h5")
 
 data = np.zeros((datasetX_all.shape[0],datasetX_all.shape[1]))  
 for i in range(datasetX_all.shape[0]):
     print(i)
-    data[i,:] = get_contribution(datasetX_all, i, model)
+    data[i,:] = get_contribution(datasetX_all, i, DNN_model)
 
 #np.savetxt("D:/project/data/beijing/small_domain/contribution_analysis.csv", data, delimiter=',')
 np.save("D:/project/data/beijing/small_domain/contribution_analysis.npy", data) #(365,21)
