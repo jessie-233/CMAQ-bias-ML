@@ -10,7 +10,7 @@ from sklearn import metrics
 
 np.random.seed(42)
 file = np.load("E:/project/beijing/small_domain/dataset_abs_all.npy") #(365,42)
-file[0,41] = -30 #根据平均值补全第一条记录
+file[0,41] = -30 #根据平均值补全PM2.5_Bias_ystd的第一条记录
 dataset_all = file #(365,42)
 dataset_winter = np.concatenate((file[:60,:],file[334:,:]),axis=0) #(91,42)
 print(dataset_all.shape)
@@ -65,8 +65,6 @@ def build_model():
     model = keras.Sequential([
     layers.Dense(16, activation='relu', input_shape=[X_train.shape[1]]),
     layers.Dense(8, activation='relu'),
-    #layers.Dense(4, activation='relu'),
-    #layers.Dense(3, activation='relu'),
     layers.Dense(1, activation='linear')])
     optimizer=tf.keras.optimizers.RMSprop(lr_schedule)
     model.compile(loss='mse', optimizer=optimizer, metrics=['mae'])
