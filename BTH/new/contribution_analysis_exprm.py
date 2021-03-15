@@ -41,7 +41,7 @@ datasetX_tj, datasetY_tj = get_xy_dataset(tj_data)
 datasetX_hb, datasetY_hb = get_xy_dataset(hb_data)
 print(datasetX_bj.shape) #(363,18)
 
-#贡献度分析（经过实验，delta=0.01时可以使结果稳定下来。）
+#贡献度分析函数（经过实验，delta=0.01时可以使结果稳定下来。）
 def get_contribution(datasetX, x_num, NNmodel, delta = 0.01):
     x_sample = datasetX[x_num,:].reshape((-1,datasetX.shape[1])) #已经归一化过的
     y_pred = float(NNmodel.predict(x_sample))
@@ -62,7 +62,7 @@ def get_contribution(datasetX, x_num, NNmodel, delta = 0.01):
 #加载训练好的model
 DNN_model = load_model("D:/project/data/BTH/new/DNN_model.h5")
 
-#check on beijing data
+#check on beijing data(result: all passed except datasetX_bj[356,:])
 for i in range(datasetX_bj.shape[0]):
     results = np.zeros((3,datasetX_bj.shape[1])) #存储每天的3个delta结果
     num = 0
@@ -78,31 +78,65 @@ for i in range(datasetX_bj.shape[0]):
     else:
         print("day %d fail!" %i)
 
+#check on tianjin data(result: all passed)
+print("天津：")
+for i in range(datasetX_tj.shape[0]):
+    results = np.zeros((3,datasetX_tj.shape[1])) #存储每天的3个delta结果
+    num = 0
+    print("天数：",i)
+    for delta in [0.001,0.005,0.01]:
+        #print("delta =",delta)
+        result = get_contribution(datasetX_tj, i, DNN_model, delta = delta)
+        results[num,:] = result
+        num += 1
+    dif = sum(abs(results[0]-results[1])) +  sum(abs(results[1]-results[2]))
+    if dif < (datasetX_bj.shape[1] * 1 * 2):
+        print("day %d pass!" %i)
+    else:
+        print("day %d fail!" %i)
 
+#check on hebei data(result: all passed)
+print("河北：")
+for i in range(datasetX_hb.shape[0]):
+    results = np.zeros((3,datasetX_hb.shape[1])) #存储每天的3个delta结果
+    num = 0
+    print("天数：",i)
+    for delta in [0.001,0.005,0.01]:
+        #print("delta =",delta)
+        result = get_contribution(datasetX_hb, i, DNN_model, delta = delta)
+        results[num,:] = result
+        num += 1
+    dif = sum(abs(results[0]-results[1])) +  sum(abs(results[1]-results[2]))
+    if dif < (datasetX_hb.shape[1] * 1 * 2):
+        print("day %d pass!" %i)
+    else:
+        print("day %d fail!" %i)
 
-# print(get_contribution(datasetX_bj, 356, DNN_model)) #除以了0 RuntimeWarning: invalid value encountered in double_scalars
-# x_sample = datasetX_bj[356,:].reshape((-1,datasetX_bj.shape[1])) #已经归一化过的 nothing special, but high PM25 bias (y)
-# print(x_sample)
-# '''
-# [[ 0.1027151  -1.64714444 -2.70347879  1.58173829  3.34513664 -0.74338465
-#   -3.02800019  0.43040322  0.01624385 -0.01251142 -0.06934564  1.15723819
-#   -1.57180115 -0.03577759 -0.03198968 -0.2438569  -1.23752708 -1.00743187]]
-# '''
-# y_pred = float(DNN_model.predict(x_sample))
-# #print(y_pred) #-4.1822590827941895
-# y = np.zeros(x_sample.shape[1])
-# result = np.zeros(x_sample.shape[1])
-# for i in range(x_sample.shape[1]):
-#     x_sample[0,i] = x_sample[0,i] + 0.117 #加delta 从0.01往上加，至0.117有值
-#     y[i] = float(DNN_model.predict(x_sample))
-#     x_sample[0,i] = x_sample[0,i] - 0.117 #恢复
-#     #print("取第{0}条数据，第{1}个变量上调{2}，y增加{3}".format(332, i, 0.01, y[i] - y_pred))
-# sum_delt = sum(abs(y - y_pred))
-# for i in range(x_sample.shape[1]):
-#     result[i] = (abs(y[i] - y_pred) / sum_delt) * 100
-#     #print("第{0}个变量贡献度为{1}%".format(i, result[i]))
-# result = np.around(result, decimals=2)
-# print(result)
+#check on datasetX_bj[356,:]
+print(get_contribution(datasetX_bj, 356, DNN_model)) #除以了0 RuntimeWarning: invalid value encountered in double_scalars
+x_sample = datasetX_bj[356,:].reshape((-1,datasetX_bj.shape[1])) #已经归一化过的 nothing special, but high PM25 bias (y)
+print(x_sample)
+'''
+[[ 0.1027151  -1.64714444 -2.70347879  1.58173829  3.34513664 -0.74338465
+  -3.02800019  0.43040322  0.01624385 -0.01251142 -0.06934564  1.15723819
+  -1.57180115 -0.03577759 -0.03198968 -0.2438569  -1.23752708 -1.00743187]]
+no outlier, but high PM25 bias (y)
+'''
+y_pred = float(DNN_model.predict(x_sample))
+#print(y_pred) #-4.1822590827941895
+y = np.zeros(x_sample.shape[1])
+result = np.zeros(x_sample.shape[1])
+for i in range(x_sample.shape[1]):
+    x_sample[0,i] = x_sample[0,i] + 0.117 #加delta 从0.01往上加，至0.117有值
+    y[i] = float(DNN_model.predict(x_sample))
+    x_sample[0,i] = x_sample[0,i] - 0.117 #恢复
+    #print("取第{0}条数据，第{1}个变量上调{2}，y增加{3}".format(332, i, 0.01, y[i] - y_pred))
+sum_delt = sum(abs(y - y_pred))
+for i in range(x_sample.shape[1]):
+    result[i] = (abs(y[i] - y_pred) / sum_delt) * 100
+    #print("第{0}个变量贡献度为{1}%".format(i, result[i]))
+result = np.around(result, decimals=2)
+print(result)
 
 
 
