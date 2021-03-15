@@ -9,14 +9,15 @@ from tensorflow.keras.callbacks import LearningRateScheduler
 import math
 from sklearn import metrics
 
-np.random.seed(42)
+np.random.seed(472)
+tf.random.set_seed(287)
 file = np.load("D:/project/data/BTH/new/dataset_abs.npy") #(44,363,42)
 dataset_winter = np.concatenate((file[:,:60,:],file[:,334:,:]),axis=1).reshape((-1,42)) #(3960, 42)
 dataset_all = file.reshape((-1,42)) #(16016, 42)
 var_dict = {'PM2.5_Bias':0, 'PM10_Bias':1, 'NO2_Bias':2, 'SO2_Bias':3, 'O3_Bias':4, 'CO_Bias':5, 'PM2.5_Obs':6, 'PM10_Obs':7, 'NO2_Obs':8, 'SO2_Obs':9, 'O3_Obs':10, 'CO_Obs':11, 'PM2.5_Sim':12, 'RH_Bias':18, 'TEM_Bias':19, 'WSPD_Bias':20, 'WDIR_Bias':21, 'PRE_Bias':22, 'RH_Obs':23, 'TEM_Obs':24, 'WSPD_Obs':25, 'WDIR_Obs':26, 'PRE_Obs':27, 'PBLH_Sim':28, 'SOLRAD_Sim':29, 'WIN_N_Obs':35, 'WIN_E_Obs':37, 'WIN_N_Bias':39, 'WIN_E_Bias':40, 'PM2.5_Bias_ystd':41}
 np.random.shuffle(dataset_all) #(16016, 42)
 # 数据集制作
-var_sele = ['PM2.5_Sim','PM2.5_Bias_ystd','NO2_Bias','SO2_Bias','NO2_Obs','SO2_Obs','RH_Bias','TEM_Bias','WIN_N_Bias','WIN_E_Bias','PRE_Bias','RH_Obs','TEM_Obs','WSPD_Obs','PRE_Obs','PBLH_Sim','SOLRAD_Sim']
+var_sele = ['PM2.5_Sim','PM2.5_Bias_ystd','NO2_Bias','SO2_Bias','NO2_Obs','SO2_Obs','RH_Bias','TEM_Bias','WIN_N_Bias','WIN_E_Bias','PRE_Bias','RH_Obs','TEM_Obs','WIN_N_Obs','WIN_E_Obs','PRE_Obs','PBLH_Sim','SOLRAD_Sim']
 
 def get_xy_dataset(input_dataset):
     global scaler1, scaler2    

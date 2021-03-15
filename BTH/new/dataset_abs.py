@@ -129,18 +129,55 @@ for i in range(44):
     #风向风速矢量分解，新加6个变量
     data[i,:,35] = mete_obs[m_loc[i][0],m_loc[i][1],2:,2] * np.cos(mete_obs[m_loc[i][0],m_loc[i][1],2:,3] * np.pi / 180) #WIN_N_Obs
     data[i,:,36] = mete_sim[m_loc[i][0],m_loc[i][1],2:,5] * np.cos(mete_sim[m_loc[i][0],m_loc[i][1],2:,6] * np.pi / 180) #WIN_N_Sim
-
     data[i,:,37] = mete_obs[m_loc[i][0],m_loc[i][1],2:,2] * np.sin(mete_obs[m_loc[i][0],m_loc[i][1],2:,3] * np.pi / 180) #WIN_E_Obs
     data[i,:,38] = mete_sim[m_loc[i][0],m_loc[i][1],2:,5] * np.sin(mete_sim[m_loc[i][0],m_loc[i][1],2:,6] * np.pi / 180) #WIN_E_Sim
     data[i,:,39] = data[i,:,36] - data[i,:,35] #WIN_N_Bias
     data[i,:,40] = data[i,:,38] - data[i,:,37] #WIN_E_Bias
-    #前一天的bias
+    #前一天的PM25bias
     data[i,0,41] = p_sim[p_loc[i][0],p_loc[i][1],1,0] - p_obs[p_loc[i][0],p_loc[i][1],1,3]
     data[i,1:,41] = data[i,0:362,0]
 
+#修补WSPD_Obs data
+data[13,22,25] = 1.7
+data[16,322,25] = 3.0
+data[20,322,25] = 4.0
+data[13,323,25] = 4
+data[16,323,25] = 4
+data[20,323,25] = 5
+data[14,324,25] = 4
+#修补WIN_N_Obs data
+data[13,22,35] = data[13,22,25] * np.cos(mete_obs[m_loc[13][0],m_loc[13][1],24,3] * np.pi / 180)
+data[16,322,35] = data[16,322,35] * np.cos(mete_obs[m_loc[16][0],m_loc[16][1],324,3] * np.pi / 180)
+data[20,322,35] = data[20,322,35] * np.cos(mete_obs[m_loc[20][0],m_loc[20][1],324,3] * np.pi / 180)
+data[13,323,35] = data[13,323,35] * np.cos(mete_obs[m_loc[13][0],m_loc[13][1],325,3] * np.pi / 180)
+data[16,323,35] = data[16,323,35] * np.cos(mete_obs[m_loc[16][0],m_loc[16][1],325,3] * np.pi / 180)
+data[20,323,35] = data[20,323,35] * np.cos(mete_obs[m_loc[20][0],m_loc[20][1],325,3] * np.pi / 180)
+data[14,324,35] = data[14,324,35] * np.cos(mete_obs[m_loc[14][0],m_loc[14][1],326,3] * np.pi / 180)
+#修补WIN_E_Obs data
+data[13,22,37] = data[13,22,25] * np.sin(mete_obs[m_loc[13][0],m_loc[13][1],24,3] * np.pi / 180)
+data[16,322,37] = data[16,322,35] * np.sin(mete_obs[m_loc[16][0],m_loc[16][1],324,3] * np.pi / 180)
+data[20,322,37] = data[20,322,35] * np.sin(mete_obs[m_loc[20][0],m_loc[20][1],324,3] * np.pi / 180)
+data[13,323,37] = data[13,323,35] * np.sin(mete_obs[m_loc[13][0],m_loc[13][1],325,3] * np.pi / 180)
+data[16,323,37] = data[16,323,35] * np.sin(mete_obs[m_loc[16][0],m_loc[16][1],325,3] * np.pi / 180)
+data[20,323,37] = data[20,323,35] * np.sin(mete_obs[m_loc[20][0],m_loc[20][1],325,3] * np.pi / 180)
+data[14,324,37] = data[14,324,35] * np.sin(mete_obs[m_loc[14][0],m_loc[14][1],326,3] * np.pi / 180)
+#修补WIN_N_Bias data
+data[13,22,39] = data[13,22,36] - data[13,22,35]
+data[16,322,39] = data[16,322,36] - data[16,322,35]
+data[20,322,39] = data[20,322,36] - data[20,322,35]
+data[13,323,39] = data[13,323,36] - data[13,323,35]
+data[16,323,39] = data[16,323,36] - data[16,323,35]
+data[20,323,39] = data[20,323,36] - data[20,323,35]
+data[14,324,39] = data[14,324,36] - data[14,324,35]
+#修补WIN_E_Bias data
+data[13,22,40] = data[13,22,38] - data[13,22,37]
+data[16,322,40] = data[16,322,38] - data[16,322,37]
+data[20,322,40] = data[20,322,38] - data[20,322,37]
+data[13,323,40] = data[13,323,38] - data[13,323,37]
+data[16,323,40] = data[16,323,38] - data[16,323,37]
+data[20,323,40] = data[20,323,38] - data[20,323,37]
+data[14,324,40] = data[14,324,38] - data[14,324,37]
 
 print(data.shape) #(44, 363, 42)
-print(data[:,0,41])
 data = np.around(data, 2) #都保留2位小数
 np.save("D:/project/data/BTH/new/dataset_abs.npy", data)
-1654710373
