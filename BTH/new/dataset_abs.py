@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.ma as ma
+#目前PM10 Obs数据仍有问题
 
 data = np.zeros((44,363,42)) #第一天的数据缺少；并且由于有bias_ystd变量，再删去第二天数据
 #污染物观测 NO2,SO2,O3,PM25,PM10,CO(mg/m3)
