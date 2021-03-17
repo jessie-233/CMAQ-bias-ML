@@ -8,9 +8,16 @@ all_vars = {'PM2.5_Bias', 'PM10_Bias', 'NO2_Bias', 'SO2_Bias', 'O3_Bias', 'CO_Bi
 var_dict = {'PM2.5_Bias':0, 'NO2_Bias':2, 'SO2_Bias':3, 'PM2.5_Obs':6, 'NO2_Obs':8, 'SO2_Obs':9, 'PM2.5_Sim':12, 'RH_Bias':18, 'TEM_Bias':19, 'WSPD_Bias':20, 'WDIR_Bias':21, 'PRE_Bias':22, 'RH_Obs':23, 'TEM_Obs':24, 'WSPD_Obs':25, 'WDIR_Obs':26, 'PRE_Obs':27, 'PBLH_Sim':28, 'SOLRAD_Sim':29, 'WIN_N_Obs':35, 'WIN_E_Obs':37, 'WIN_N_Bias':39, 'WIN_E_Bias':40, 'PM2.5_Bias_ystd':41}
 var_sele = ['PM2.5_Sim','PM2.5_Bias_ystd','NO2_Bias','SO2_Bias','NO2_Obs','SO2_Obs','RH_Bias','TEM_Bias','WIN_N_Bias','WIN_E_Bias','PRE_Bias','RH_Obs','TEM_Obs','WIN_N_Obs','WIN_E_Obs','PRE_Obs','PBLH_Sim','SOLRAD_Sim']
 region_num = np.array([2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,0,0,0,2,2,0,0,0,2,0,0,2,2,2,2]) #北京0，天津1，河北2
+
+#取平均
 bj_data = np.mean(data[np.where(region_num == 0),:,:],axis=(0,1)) #(363, 42)
 tj_data = np.mean(data[np.where(region_num == 1),:,:],axis=(0,1))
 hb_data = np.mean(data[np.where(region_num == 2),:,:],axis=(0,1))
+
+# #不取平均(结果类似)
+# bj_data = data[np.where(region_num == 0),:,:].reshape((363*8,42)) #(2904, 42)
+# tj_data = data[np.where(region_num == 1),:,:].reshape((363*6,42)) #(2178, 42)
+# hb_data = data[np.where(region_num == 2),:,:].reshape((363*30,42)) #(10890, 42)
 
 #计算scaler1, scaler2
 data = data.reshape((-1,42)) #(16016, 42)
@@ -39,7 +46,7 @@ def get_xy_dataset(input_dataset):
 datasetX_bj, datasetY_bj = get_xy_dataset(bj_data)
 datasetX_tj, datasetY_tj = get_xy_dataset(tj_data)
 datasetX_hb, datasetY_hb = get_xy_dataset(hb_data)
-print(datasetX_bj.shape) #(363,18)
+print(datasetX_bj.shape) #(2904,18)
 
 #贡献度分析函数（经过实验，delta=0.01时可以使结果稳定下来。）
 def get_contribution(datasetX, x_num, NNmodel, delta = 0.01):
@@ -61,6 +68,9 @@ def get_contribution(datasetX, x_num, NNmodel, delta = 0.01):
 
 #加载训练好的model
 DNN_model = load_model("D:/project/data/BTH/new/DNN_model.h5")
+for i in range(5):
+    print(get_contribution(datasetX_bj, i, DNN_model))
+    
 
 #check on beijing data(result: all passed except datasetX_bj[356,:])
 for i in range(datasetX_bj.shape[0]):
@@ -116,12 +126,12 @@ for i in range(datasetX_hb.shape[0]):
 print(get_contribution(datasetX_bj, 356, DNN_model)) #除以了0 RuntimeWarning: invalid value encountered in double_scalars
 x_sample = datasetX_bj[356,:].reshape((-1,datasetX_bj.shape[1])) #已经归一化过的 nothing special, but high PM25 bias (y)
 print(x_sample)
-'''
-[[ 0.1027151  -1.64714444 -2.70347879  1.58173829  3.34513664 -0.74338465
-  -3.02800019  0.43040322  0.01624385 -0.01251142 -0.06934564  1.15723819
-  -1.57180115 -0.03577759 -0.03198968 -0.2438569  -1.23752708 -1.00743187]]
-no outlier, but high PM25 bias (y)
-'''
+
+# [[ 0.1027151  -1.64714444 -2.70347879  1.58173829  3.34513664 -0.74338465
+#   -3.02800019  0.43040322  0.01624385 -0.01251142 -0.06934564  1.15723819
+#   -1.57180115 -0.03577759 -0.03198968 -0.2438569  -1.23752708 -1.00743187]]
+# no outlier, but high PM25 bias (y)
+
 y_pred = float(DNN_model.predict(x_sample))
 #print(y_pred) #-4.1822590827941895
 y = np.zeros(x_sample.shape[1])
@@ -137,7 +147,3 @@ for i in range(x_sample.shape[1]):
     #print("第{0}个变量贡献度为{1}%".format(i, result[i]))
 result = np.around(result, decimals=2)
 print(result)
-
-
-
-
