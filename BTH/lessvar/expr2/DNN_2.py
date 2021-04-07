@@ -9,21 +9,32 @@ from tensorflow.keras.callbacks import LearningRateScheduler
 import math
 from sklearn import metrics
 
-np.random.seed(720)
-tf.random.set_seed(601)
+np.random.seed(345)
+tf.random.set_seed(924)
 
-file = np.load("D:/project/data/BTH/dataset_abs_corr2.npy") #(44,363,42)
-dataset_winter = np.concatenate((file[:,:60,:],file[:,334:,:]),axis=1).reshape((-1,42)) #(3960, 42)
-dataset_all = file.reshape((-1,42)) #(16016, 42)
-var_dict = {'PM2.5_Bias':0, 'PM10_Bias':1, 'NO2_Bias':2, 'SO2_Bias':3, 'O3_Bias':4, 'CO_Bias':5, 'PM2.5_Obs':6, 'PM10_Obs':7, 'NO2_Obs':8, 'SO2_Obs':9, 'O3_Obs':10, 'CO_Obs':11, 'PM2.5_Sim':12, 'RH_Bias':18, 'TEM_Bias':19, 'WSPD_Bias':20, 'WDIR_Bias':21, 'PRE_Bias':22, 'RH_Obs':23, 'TEM_Obs':24, 'WSPD_Obs':25, 'WDIR_Obs':26, 'PRE_Obs':27, 'PBLH_Sim':28, 'SOLRAD_Sim':29, 'WIN_N_Obs':35, 'WIN_E_Obs':37, 'WIN_N_Bias':39, 'WIN_E_Bias':40, 'PM2.5_Bias_ystd':41}
-np.random.shuffle(dataset_all) #(16016, 42)
-# 数据集制作
-# var_sele = ['PM2.5_Bias_ystd','NO2_Bias','SO2_Bias','O3_Bias','RH_Bias','TEM_Bias','WDIR_Bias','WSPD_Bias','PRE_Bias']
-# var_sele = ['PM2.5_Sim','PM2.5_Bias_ystd','NO2_Bias','SO2_Bias','O3_Bias','NO2_Obs','SO2_Obs','O3_Obs','RH_Bias','TEM_Bias','WDIR_Bias','WSPD_Bias','PRE_Bias','RH_Obs','TEM_Obs','WSPD_Obs','PRE_Obs','PBLH_Sim','SOLRAD_Sim']
-# 'SO2_Obs','RH_Obs','TEM_Obs','PRE_Obs','PBLH_Sim','SOLRAD_Sim'
-var_sele = ['PM2.5_Bias_ystd','PM2.5_Sim','NO2_Bias','RH_Bias','O3_Bias','SO2_Bias','WSPD_Bias','NO2_Obs','O3_Obs']
+data = np.load("D:/project/data/BTH/DOMAIN_TRANS/BTH/dataset_BTH.npy") #(61, 363, 43)
+dataset_all = data.reshape((-1,43))
+train_data = np.concatenate((data[:,0:20,:],data[:,29:49,:],data[:,57:77,:],data[:,88:108,:],data[:,118:138,:],data[:,149:169,:],data[:,179:199,:],data[:,210:230,:],data[:,241:261,:],data[:,271:291,:],data[:,302:322,:],data[:,332:352,:]),axis=1).reshape((-1,43))
+test_data = np.concatenate((data[:,20:29,:],data[:,49:57,:],data[:,77:88,:],data[:,108:118,:],data[:,138:149,:],data[:,169:179,:],data[:,199:210,:],data[:,230:241,:],data[:,261:271,:],data[:,291:302,:],data[:,322:332,:],data[:,352:363,:]),axis=1).reshape((-1,43)) 
 
+var_dict = {'PM2.5_Bias':0, 'PM10_Bias':1, 'NO2_Bias':2, 'SO2_Bias':3, 'O3_Bias':4, 'CO_Bias':5, 'PM2.5_Obs':6, 'PM10_Obs':7, 'NO2_Obs':8, 'SO2_Obs':9, 'O3_Obs':10, 'CO_Obs':11, 'PM2.5_Sim':12, 'PM10_Sim':13, 'NO2_Sim':14, 'SO2_Sim':15, 'O3_Sim':16, 'CO_Sim':17, 'RH_Bias':18, 'TEM_Bias':19, 'WSPD_Bias':20, 'WDIR_Bias':21, 'PRE_Bias':22, 'RH_Obs':23, 'TEM_Obs':24, 'WSPD_Obs':25, 'WDIR_Obs':26, 'PRE_Obs':27, 'PBLH_Sim':28, 'SOLRAD_Sim':29, 'RH_Sim':30, 'TEM_Sim':31, 'WSPD_Sim':32, 'WDIR_Sim':33, 'PRE_Sim':34, 'PM2.5_Bias_ystd':35, 'NO2_Bias_ystd':36, 'RH_Bias_ystd':37, 'O3_Bias_ystd':38, 'SO2_Bias_ystd':39, 'WSPD_Bias_ystd':40, 'NO2_Obs_ystd':41, 'O3_Obs_ystd':42}
 
+np.random.shuffle(train_data) 
+var_sele = ['PM2.5_Bias_ystd','PM2.5_Sim','NO2_Bias','RH_Bias','SO2_Bias','WSPD_Bias','NO2_Obs','TEM_Obs','RH_Obs']
+
+#standardization: scaler of dataset_all
+Y_all = dataset_all[:,0].reshape((dataset_all.shape[0],1))
+X_all = np.zeros((len(dataset_all),len(var_sele)))
+i = 0
+for var in var_sele:
+    X_all[:,i] = dataset_all[:,var_dict.get(var)]
+    i += 1
+scaler1 = preprocessing.StandardScaler().fit(X_all)
+scaler2 = preprocessing.StandardScaler().fit(Y_all)
+X_all = scaler1.transform(X_all)
+Y_all = scaler2.transform(Y_all) #(15972, 1)
+
+#prepare x & y dataset
 def get_xy_dataset(input_dataset):
     global scaler1, scaler2    
     Y = input_dataset[:,0] #'PM2.5_Bias'
@@ -32,23 +43,14 @@ def get_xy_dataset(input_dataset):
     for var in var_sele:
         X[:,i] = input_dataset[:,var_dict.get(var)]
         i += 1
-    scaler1 = preprocessing.StandardScaler().fit(X)#归一化
-    X = scaler1.transform(X)
+    X = scaler1.transform(X) #标准化
     Y = Y.reshape((Y.shape[0],1))
-    scaler2 = preprocessing.StandardScaler().fit(Y)
-    Y = scaler2.transform(Y)
+    Y = scaler2.transform(Y) #标准化
     return X, Y
 
-datasetX_winter, datasetY_winter = get_xy_dataset(dataset_winter)
-datasetX_all, datasetY_all = get_xy_dataset(dataset_all) #scaler1, scaler2目前是全集数据的
-# 训练集、测试集
-def split_dataset(input_datasetx, input_datasety, ratio = 0.75):
-    train_size = int(len(input_datasetx)*ratio) 
-    X_train, y_train = input_datasetx[0:train_size,:], input_datasety[0:train_size] 
-    X_test, y_test = input_datasetx[train_size:,:], input_datasety[train_size:]
-    return X_train, y_train, X_test, y_test
-
-X_train, y_train, X_test, y_test = split_dataset(datasetX_all, datasetY_all)
+#train dataset & test dataset
+X_train , y_train = get_xy_dataset(train_data)
+X_test, y_test = get_xy_dataset(test_data)
 
 early_stopping = keras.callbacks.EarlyStopping(
     monitor='val_loss', 
@@ -62,15 +64,15 @@ lr_schedule = tf.keras.optimizers.schedules.InverseTimeDecay(
     decay_rate=1,
     staircase=False)
 
-#另外一种学习率下降方法
-def scheduler(epoch):
-    # 每隔40个epoch，学习率减小为原来的1/10
-    if epoch % 40 == 0 and epoch != 0:
-        lr = K.get_value(model.optimizer.lr)
-        K.set_value(model.optimizer.lr, lr * 0.1)
-        print("lr changed to {}".format(lr * 0.1))
-    return K.get_value(model.optimizer.lr)
-reduce_lr = LearningRateScheduler(scheduler)
+# #option: LearningRateScheduler
+# def scheduler(epoch):
+#     # 每隔40个epoch，学习率减小为原来的1/10
+#     if epoch % 40 == 0 and epoch != 0:
+#         lr = K.get_value(model.optimizer.lr)
+#         K.set_value(model.optimizer.lr, lr * 0.1)
+#         print("lr changed to {}".format(lr * 0.1))
+#     return K.get_value(model.optimizer.lr)
+# reduce_lr = LearningRateScheduler(scheduler)
 
 def build_model():
     model = keras.Sequential([
@@ -88,20 +90,20 @@ model.summary()
 
 EPOCHS = 1000
 history = model.fit(X_train, y_train, epochs=EPOCHS, batch_size=60, validation_split = 0.2, callbacks=[early_stopping], shuffle=False)
-#查看loss
+#loss
 loss = history.history['loss'] #mse
 val_loss = history.history['val_loss']
 # mae = history.history['mae']
 # val_mae = history.history['val_mae']
 
-#画图
+#plot
 plt.figure(figsize=(8, 8))
 # plt.subplot(1, 2, 1)
 plt.plot(history.epoch, loss, label='Training MSE')
 plt.plot(history.epoch, val_loss, label='Validation MSE')
 plt.legend(loc='upper right')
 plt.title('Training and Validation Loss(MSE)')
-plt.savefig("D:/project/data/BTH/lessvar/expr2/DNN_Model2_Loss.png")
+plt.savefig("D:/project/data/BTH/lessvar/expr2/DNN_Model_Loss2.png")
 # plt.subplot(1, 2, 2)
 # plt.plot(history.epoch, mae, label='Training MAE')
 # plt.plot(history.epoch, val_mae, label='Validation MAE')
@@ -109,15 +111,13 @@ plt.savefig("D:/project/data/BTH/lessvar/expr2/DNN_Model2_Loss.png")
 # plt.title('Training and Validation MAE')
 plt.show()
 
-#计算测试集RMSE损失
+#RMSE on test dataset
 y_pred = model.predict(X_test)
-y_pred = scaler2.inverse_transform(y_pred) #用全集的scaler
-y_test = scaler2.inverse_transform(y_test)
+y_pred = scaler2.inverse_transform(y_pred) #invers
+y_test = scaler2.inverse_transform(y_test) #invers
 test_rmse = math.sqrt(metrics.mean_squared_error(y_test, y_pred))
-print('测试集RMSE损失为：%.3f' % test_rmse)
+print('RMSE on test dataset：%.3f' % test_rmse)
 
-#计算修正后的各项指标
-#bias=sim-obs,PM25_revised=sim-bias
 
 #RMSE
 def cal_rmse(xtest, ytest = None, info = ''):
@@ -125,15 +125,13 @@ def cal_rmse(xtest, ytest = None, info = ''):
         RMSE = math.sqrt(metrics.mean_squared_error(xtest[:,var_dict.get('PM2.5_Obs')], xtest[:,var_dict.get('PM2.5_Sim')]))
     else:
         y_pred = model.predict(xtest)
-        y_pred = scaler2.inverse_transform(y_pred) #计算winter时用全集的scaler
+        y_pred = scaler2.inverse_transform(y_pred) #invers
         PM25_revised = ytest[:,var_dict.get('PM2.5_Sim')] - y_pred.reshape(len(xtest),)
         RMSE = math.sqrt(metrics.mean_squared_error(ytest[:,var_dict.get('PM2.5_Obs')], PM25_revised))
     print(info + ' RMSE: %.3f' % RMSE)
 
 cal_rmse(dataset_all, info = 'all year')
-cal_rmse(datasetX_all, dataset_all, 'all year revised')
-cal_rmse(dataset_winter, info = 'winter')
-cal_rmse(datasetX_winter, dataset_winter, 'winter revised')
+cal_rmse(X_all, dataset_all, 'all year revised')
 
 #R2
 def cal_R2(xtest, ytest = None, info = ''):
@@ -149,9 +147,7 @@ def cal_R2(xtest, ytest = None, info = ''):
     print(info + ' R2: %.3f' % R2)
 
 cal_R2(dataset_all, info = 'all year')
-cal_R2(datasetX_all, dataset_all, 'all year revised')
-cal_R2(dataset_winter, info = 'winter')
-cal_R2(datasetX_winter, dataset_winter, 'winter revised')
+cal_R2(X_all, dataset_all, 'all year revised')
 
 #NMB
 def cal_NMB(xtest, ytest = None, info = ''):
@@ -166,8 +162,8 @@ def cal_NMB(xtest, ytest = None, info = ''):
     print(info + ' NMB: %.3f' % NMB)
 
 cal_NMB(dataset_all, info = 'all year')
-cal_NMB(datasetX_all, dataset_all, 'all year revised')
-cal_NMB(dataset_winter, info = 'winter')
-cal_NMB(datasetX_winter, dataset_winter, 'winter revised')
+cal_NMB(X_all, dataset_all, 'all year revised')
+
 
 model.save("D:/project/data/BTH/lessvar/expr2/DNN_model2.h5")
+
