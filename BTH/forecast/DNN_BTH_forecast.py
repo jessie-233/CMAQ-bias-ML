@@ -9,8 +9,8 @@ from tensorflow.keras.callbacks import LearningRateScheduler
 import math
 from sklearn import metrics
 
-np.random.seed(457)
-tf.random.set_seed(834)
+np.random.seed(476)
+tf.random.set_seed(936)
 data_BTH = np.load("D:/project/data/BTH/dataset_BTH.npy") #(44,363,43)
 data_YRD = np.load("D:/project/data/YRD/dataset_YRD.npy")
 data = np.concatenate((data_BTH,data_YRD),axis=0) #(105, 363, 43)
@@ -24,7 +24,7 @@ dataset_all = data.reshape((-1,43)) #(38115, 43)
 np.random.shuffle(train_data)
 var_dict = {'PM2.5_Bias':0, 'PM10_Bias':1, 'NO2_Bias':2, 'SO2_Bias':3, 'O3_Bias':4, 'CO_Bias':5, 'PM2.5_Obs':6, 'PM10_Obs':7, 'NO2_Obs':8, 'SO2_Obs':9, 'O3_Obs':10, 'CO_Obs':11, 'PM2.5_Sim':12, 'PM10_Sim':13, 'NO2_Sim':14, 'SO2_Sim':15, 'O3_Sim':16, 'CO_Sim':17, 'RH_Bias':18, 'TEM_Bias':19, 'WSPD_Bias':20, 'WDIR_Bias':21, 'PRE_Bias':22, 'RH_Obs':23, 'TEM_Obs':24, 'WSPD_Obs':25, 'WDIR_Obs':26, 'PRE_Obs':27, 'PBLH_Sim':28, 'SOLRAD_Sim':29, 'RH_Sim':30, 'TEM_Sim':31, 'WSPD_Sim':32, 'WDIR_Sim':33, 'PRE_Sim':34, 'PM2.5_Bias_ystd':35, 'NO2_Bias_ystd':36, 'RH_Bias_ystd':37, 'O3_Bias_ystd':38, 'SO2_Bias_ystd':39, 'WSPD_Bias_ystd':40, 'NO2_Obs_ystd':41, 'O3_Obs_ystd':42}
 
-var_sele = ['PM2.5_Sim','NO2_Bias','SO2_Bias','O3_Bias','NO2_Obs','SO2_Obs','O3_Obs','RH_Bias','TEM_Bias','WDIR_Bias','WSPD_Bias','PRE_Bias','RH_Obs','TEM_Obs','WSPD_Obs','PRE_Obs','PBLH_Sim','SOLRAD_Sim']
+var_sele = ['PM2.5_Sim','NO2_Sim','SO2_Sim','O3_Sim','RH_Sim','TEM_Sim','WSPD_Sim','PRE_Sim','PBLH_Sim','SOLRAD_Sim']
 
 #standardization: scaler of dataset_all
 Y_all = dataset_all[:,0].reshape((dataset_all.shape[0],1))
@@ -35,8 +35,9 @@ for var in var_sele:
     i += 1
 scaler1 = preprocessing.StandardScaler().fit(X_all)
 scaler2 = preprocessing.StandardScaler().fit(Y_all)
-X_all = scaler1.transform(X_all) #(38115, 19)
-Y_all = scaler2.transform(Y_all) #(38115, 1)
+X_all = scaler1.transform(X_all) #(15972, 19)
+Y_all = scaler2.transform(Y_all) #(15972, 1)
+print(X_all.shape)
 
 #prepare x & y dataset
 def get_xy_dataset(input_dataset):
@@ -64,7 +65,7 @@ early_stopping = keras.callbacks.EarlyStopping(
 #initial_learning_rate / (1 + decay_rate * step / decay_step)
 lr_schedule = tf.keras.optimizers.schedules.InverseTimeDecay(
     0.001, 
-    decay_steps=300*100, 
+    decay_steps=160*100, 
     decay_rate=0.5,
     staircase=False)
 
@@ -93,7 +94,7 @@ model = build_model()
 model.summary()
 
 EPOCHS = 1000
-history = model.fit(X_train, y_train, epochs=EPOCHS, batch_size=200, validation_split = 0.2, callbacks=[early_stopping], shuffle=False)
+history = model.fit(X_train, y_train, epochs=EPOCHS, batch_size=60, validation_split = 0.2, callbacks=[early_stopping], shuffle=False)
 #查看loss
 loss = history.history['loss'] #mse
 val_loss = history.history['val_loss']
@@ -107,7 +108,7 @@ plt.plot(history.epoch, loss, label='Training MSE')
 plt.plot(history.epoch, val_loss, label='Validation MSE')
 plt.legend(loc='upper right')
 plt.title('Training and Validation Loss(MSE)')
-# plt.savefig("D:/project/data/together/final_allvar/seed1/DNN_tog_1_Loss.png")
+plt.savefig("D:/project/data/BTH/forecast/DNN_BTH_forecast_Loss.png")
 # plt.subplot(1, 2, 2)
 # plt.plot(history.epoch, mae, label='Training MAE')
 # plt.plot(history.epoch, val_mae, label='Validation MAE')
@@ -170,4 +171,4 @@ def cal_NMB(xtest, ytest = None, info = ''):
 cal_NMB(dataset_all, info = 'all year')
 cal_NMB(X_all, dataset_all, 'all year revised')
 
-# model.save("D:/project/data/together/final_allvar/seed1/DNN_tog_1.h5")
+model.save("D:/project/data/BTH/forecast/DNN_BTH_forecast.h5")
